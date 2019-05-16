@@ -1,10 +1,10 @@
-package httpclient
+package httpclient_test
 
 import (
-	"github.com/go-chassis/go-chassis/pkg/httpclient"
-	"github.com/go-chassis/go-chassis/security"
+	"github.com/go-chassis/foundation/httpclient"
 	_ "github.com/go-chassis/go-chassis/security/plugins/aes"
 	"github.com/stretchr/testify/assert"
+
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -62,7 +62,6 @@ func TestGetURLClient(t *testing.T) {
 	var uc = new(httpclient.URLClientOption)
 	uc.Compressed = true
 	uc.SSLEnabled = true
-	uc.Verbose = true
 	uc.HandshakeTimeout = tduration
 	uc.ResponseHeaderTimeout = tduration
 
@@ -122,7 +121,6 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 	var uc2 = new(httpclient.URLClientOption)
 	uc2.Compressed = true
 	uc2.SSLEnabled = false
-	uc2.Verbose = true
 	uc2.HandshakeTimeout = tduration
 	uc2.ResponseHeaderTimeout = tduration
 
@@ -131,15 +129,4 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 	assert.Equal(t, expectedc.Client, c2.Client)
 	assert.NoError(t, err)
 
-}
-
-//	err = os.Remove(path)
-//	assert.NoError(t, err)
-//}
-func TestLoadTLSCertificateFileNotExist(t *testing.T) {
-
-	var cip security.Cipher
-	tlsCert, err := httpclient.LoadTLSCertificate("abc.txt", "abc.txt", "fakepassphase", cip)
-	assert.Nil(t, tlsCert)
-	assert.Error(t, err)
 }

@@ -18,3 +18,6 @@ http-client give you a production level client.
 	}
 	resp, err := uc.HTTPDo("GET", "https://fakeURL", nil, nil)
 ```
+
+Debug Mode
+export HTTP_DEBUG=1
