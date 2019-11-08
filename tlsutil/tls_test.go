@@ -2,7 +2,7 @@ package tlsutil_test
 
 import (
 	"github.com/go-chassis/foundation/security"
-	"github.com/go-chassis/foundation/tls"
+	"github.com/go-chassis/foundation/tlsutil"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

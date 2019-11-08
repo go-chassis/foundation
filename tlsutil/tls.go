@@ -6,8 +6,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"github.com/go-chassis/foundation/security"
 	"io/ioutil"
+
+	"github.com/go-chassis/foundation/security"
+
 )
 
 //GetX509CACertPool is a function used to get certificate
