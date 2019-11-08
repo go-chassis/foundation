@@ -16,7 +16,7 @@ import (
 )
 
 //SignRequest sign a http request so that it can talk to API server
-//this is global implementation, if you do not set SignRequest in URLClientOption
+//this is global implementation, if you do not set SignRequest in Options
 //client will use this function
 var SignRequest func(*http.Request) error
 
@@ -42,7 +42,7 @@ func NewGZipBodyReader(body io.ReadCloser) (io.ReadCloser, error) {
 type Requests struct {
 	*http.Client
 	TLS     *tls.Config
-	options URLClientOption
+	options Options
 }
 
 func (r *Requests) Get(ctx context.Context, url string, headers http.Header) (resp *http.Response, err error) {
@@ -126,29 +126,29 @@ func (r *Requests) Do(ctx context.Context, method string, url string, headers ht
 	return resp, nil
 }
 
-func setOptionDefaultValue(o *URLClientOption) URLClientOption {
+func setOptionDefaultValue(o *Options) Options {
 	if o == nil {
-		return DefaultURLClientOption
+		return DefaultOptions
 	}
 
 	option := *o
 	if option.RequestTimeout <= 0 {
-		option.RequestTimeout = DefaultURLClientOption.RequestTimeout
+		option.RequestTimeout = DefaultOptions.RequestTimeout
 	}
 	if option.HandshakeTimeout <= 0 {
-		option.HandshakeTimeout = DefaultURLClientOption.HandshakeTimeout
+		option.HandshakeTimeout = DefaultOptions.HandshakeTimeout
 	}
 	if option.ResponseHeaderTimeout <= 0 {
-		option.ResponseHeaderTimeout = DefaultURLClientOption.ResponseHeaderTimeout
+		option.ResponseHeaderTimeout = DefaultOptions.ResponseHeaderTimeout
 	}
 	if option.ConnsPerHost <= 0 {
-		option.ConnsPerHost = DefaultURLClientOption.ConnsPerHost
+		option.ConnsPerHost = DefaultOptions.ConnsPerHost
 	}
 	return option
 }
 
 //New is a function which which sets client option
-func New(o *URLClientOption) (client *Requests, err error) {
+func New(o *Options) (client *Requests, err error) {
 	option := setOptionDefaultValue(o)
 	if !option.SSLEnabled {
 		client = &Requests{

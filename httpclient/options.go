@@ -23,8 +23,8 @@ import (
 	"time"
 )
 
-//DefaultURLClientOption is a struct object which has default client option
-var DefaultURLClientOption = URLClientOption{
+//DefaultOptions is a struct object which has default client option
+var DefaultOptions = Options{
 	Compressed:            true,
 	HandshakeTimeout:      30 * time.Second,
 	ResponseHeaderTimeout: 60 * time.Second,
@@ -32,8 +32,8 @@ var DefaultURLClientOption = URLClientOption{
 	ConnsPerHost:          5,
 }
 
-//URLClientOption is a struct which provides options for client
-type URLClientOption struct {
+//Options is a struct which provides options for client
+type Options struct {
 	SSLEnabled            bool
 	TLSConfig             *tls.Config
 	Compressed            bool

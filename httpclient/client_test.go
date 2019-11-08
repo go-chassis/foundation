@@ -1,6 +1,7 @@
 package httpclient_test
 
 import (
+	"context"
 	"github.com/go-chassis/foundation/httpclient"
 	_ "github.com/go-chassis/go-chassis/security/plugins/aes"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +24,7 @@ func TestHttpDo(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	resp, err := uc.Do(http.MethodGet, htServer.URL, nil, nil)
+	resp, err := uc.Do(context.Background(), http.MethodGet, htServer.URL, nil, nil)
 	assert.NotNil(t, resp)
 	assert.NoError(t, err)
 }
@@ -36,7 +37,7 @@ func TestHttpDoHeadersNil(t *testing.T) {
 	var uc = new(httpclient.Requests)
 	uc.Client = htc
 
-	resp, err := uc.Do("GET", "https://fakeURL", nil, nil)
+	resp, err := uc.Do(context.Background(), "GET", "https://fakeURL", nil, nil)
 	assert.Nil(t, resp)
 	assert.Error(t, err)
 
@@ -50,7 +51,7 @@ func TestHttpDoURLInvalid(t *testing.T) {
 	var uc = new(httpclient.Requests)
 	uc.Client = htc
 
-	resp, err := uc.Do("abc", "url", nil, nil)
+	resp, err := uc.Do(context.Background(), "abc", "url", nil, nil)
 	assert.Nil(t, resp)
 	assert.Error(t, err)
 
@@ -59,7 +60,7 @@ func TestGetURLClient(t *testing.T) {
 
 	tduration := time.Second * 2
 
-	var uc = new(httpclient.URLClientOption)
+	var uc = new(httpclient.Options)
 	uc.Compressed = true
 	uc.SSLEnabled = true
 	uc.HandshakeTimeout = tduration
@@ -83,7 +84,7 @@ func TestGetURLClient(t *testing.T) {
 
 func TestGetURLClientURLClientOptionNil(t *testing.T) {
 
-	option := httpclient.DefaultURLClientOption
+	option := httpclient.DefaultOptions
 	expectedclient := &httpclient.Requests{
 		Client: &http.Client{
 			Transport: &http.Transport{
@@ -95,7 +96,7 @@ func TestGetURLClientURLClientOptionNil(t *testing.T) {
 		TLS: option.TLSConfig,
 	}
 
-	var uc1 *httpclient.URLClientOption
+	var uc1 *httpclient.Options
 
 	c1, err := httpclient.New(uc1)
 
@@ -118,7 +119,7 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 		},
 	}
 
-	var uc2 = new(httpclient.URLClientOption)
+	var uc2 = new(httpclient.Options)
 	uc2.Compressed = true
 	uc2.SSLEnabled = false
 	uc2.HandshakeTimeout = tduration
