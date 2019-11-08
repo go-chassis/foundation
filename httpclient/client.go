@@ -2,46 +2,24 @@ package httpclient
 
 import (
 	"bytes"
+	"compress/gzip"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"strings"
-	"time"
-
-	"compress/gzip"
-	"context"
 	"github.com/go-chassis/foundation/string"
 	"io"
+	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 )
-
-//DefaultURLClientOption is a struct object which has default client option
-var DefaultURLClientOption = URLClientOption{
-	Compressed:            true,
-	HandshakeTimeout:      30 * time.Second,
-	ResponseHeaderTimeout: 60 * time.Second,
-	RequestTimeout:        60 * time.Second,
-	ConnsPerHost:          5,
-}
 
 //SignRequest sign a http request so that it can talk to API server
 //this is global implementation, if you do not set SignRequest in URLClientOption
 //client will use this function
 var SignRequest func(*http.Request) error
 
-//URLClientOption is a struct which provides options for client
-type URLClientOption struct {
-	SSLEnabled            bool
-	TLSConfig             *tls.Config
-	Compressed            bool
-	HandshakeTimeout      time.Duration
-	ResponseHeaderTimeout time.Duration
-	RequestTimeout        time.Duration
-	ConnsPerHost          int
-	SignRequest           func(*http.Request) error
-}
 type gzipBodyReader struct {
 	*gzip.Reader
 	Body io.ReadCloser
@@ -60,41 +38,50 @@ func NewGZipBodyReader(body io.ReadCloser) (io.ReadCloser, error) {
 	return &gzipBodyReader{reader, body}, nil
 }
 
-//URLClient is a struct used for storing details of a client
-type URLClient struct {
+//Requests is a restful client
+type Requests struct {
 	*http.Client
 	TLS     *tls.Config
 	options URLClientOption
 }
 
-func (client *URLClient) HTTPDoWithContext(ctx context.Context, method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	if strings.HasPrefix(rawURL, "https") {
-		if transport, ok := client.Client.Transport.(*http.Transport); ok {
-			transport.TLSClientConfig = client.TLS
+func (r *Requests) Get(ctx context.Context, url string, headers http.Header) (resp *http.Response, err error) {
+	return r.Do(ctx, "GET", url, headers, nil)
+}
+func (r *Requests) Post(ctx context.Context, url string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	return r.Do(ctx, "POST", url, headers, body)
+}
+func (r *Requests) Put(ctx context.Context, url string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	return r.Do(ctx, "PUT", url, headers, body)
+}
+func (r *Requests) Delete(ctx context.Context, url string, headers http.Header) (resp *http.Response, err error) {
+	return r.Do(ctx, "DELETE", url, headers, nil)
+}
+func (r *Requests) Do(ctx context.Context, method string, url string, headers http.Header, body []byte) (resp *http.Response, err error) {
+	if strings.HasPrefix(url, "https") {
+		if transport, ok := r.Client.Transport.(*http.Transport); ok {
+			transport.TLSClientConfig = r.TLS
 		}
 	}
-
 	if headers == nil {
 		headers = make(http.Header)
 	}
-
 	if _, ok := headers["Accept"]; !ok {
 		headers["Accept"] = []string{"*/*"}
 	}
-	if _, ok := headers["Accept-Encoding"]; !ok && client.options.Compressed {
+	if _, ok := headers["Accept-Encoding"]; !ok && r.options.Compressed {
 		headers["Accept-Encoding"] = []string{"deflate, gzip"}
 	}
-
-	req, err := http.NewRequest(method, rawURL, bytes.NewBuffer(body))
+	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("create request failed: %s", err.Error()))
 	}
 	req = req.WithContext(ctx)
 	req.Header = headers
-	//sign a request, first use function in client options
+	//sign a request, first use function in r options
 	//if there is not, use global function
-	if client.options.SignRequest != nil {
-		if err = client.options.SignRequest(req); err != nil {
+	if r.options.SignRequest != nil {
+		if err = r.options.SignRequest(req); err != nil {
 			return nil, errors.New("Add auth info failed, err: " + err.Error())
 		}
 	} else if SignRequest != nil {
@@ -102,7 +89,7 @@ func (client *URLClient) HTTPDoWithContext(ctx context.Context, method string, r
 			return nil, errors.New("Add auth info failed, err: " + err.Error())
 		}
 	}
-	resp, err = client.Client.Do(req)
+	resp, err = r.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +126,6 @@ func (client *URLClient) HTTPDoWithContext(ctx context.Context, method string, r
 	return resp, nil
 }
 
-func (client *URLClient) HTTPDo(method string, rawURL string, headers http.Header, body []byte) (resp *http.Response, err error) {
-	return client.HTTPDoWithContext(context.Background(), method, rawURL, headers, body)
-}
-
 func setOptionDefaultValue(o *URLClientOption) URLClientOption {
 	if o == nil {
 		return DefaultURLClientOption
@@ -164,12 +147,11 @@ func setOptionDefaultValue(o *URLClientOption) URLClientOption {
 	return option
 }
 
-//GetURLClient is a function which which sets client option
-func GetURLClient(o *URLClientOption) (client *URLClient, err error) {
+//New is a function which which sets client option
+func New(o *URLClientOption) (client *Requests, err error) {
 	option := setOptionDefaultValue(o)
-
 	if !option.SSLEnabled {
-		client = &URLClient{
+		client = &Requests{
 			Client: &http.Client{
 				Transport: &http.Transport{
 					MaxIdleConnsPerHost:   option.ConnsPerHost,
@@ -184,7 +166,7 @@ func GetURLClient(o *URLClientOption) (client *URLClient, err error) {
 		return
 	}
 
-	client = &URLClient{
+	client = &Requests{
 		Client: &http.Client{
 			Transport: &http.Transport{
 				TLSHandshakeTimeout:   option.HandshakeTimeout,
