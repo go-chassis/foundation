@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 
 	"github.com/go-chassis/foundation/security"
-
 )
 
 //GetX509CACertPool is a function used to get certificate

@@ -121,7 +121,10 @@ func (r *Requests) Do(ctx context.Context, method string, url string, headers ht
 			}
 		}
 
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 		fmt.Printf("< %s \n", bodyBytes)
 		fmt.Println("--- END ---")
 		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
