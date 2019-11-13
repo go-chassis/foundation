@@ -120,8 +120,11 @@ func (r *Requests) Do(ctx context.Context, method string, url string, headers ht
 				fmt.Printf("< %s: %s\n", key, value)
 			}
 		}
-		fmt.Println("<")
+
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("< %s \n", bodyBytes)
 		fmt.Println("--- END ---")
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 	}
 	return resp, nil
 }

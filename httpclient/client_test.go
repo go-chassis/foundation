@@ -5,6 +5,7 @@ import (
 	"github.com/go-chassis/foundation/httpclient"
 	_ "github.com/go-chassis/go-chassis/security/plugins/aes"
 	"github.com/stretchr/testify/assert"
+	"os"
 
 	"net/http"
 	"net/http/httptest"
@@ -13,7 +14,7 @@ import (
 )
 
 func TestHttpDo(t *testing.T) {
-
+	os.Setenv("HTTP_DEBUG", "1")
 	var htc = new(http.Client)
 	htc.Timeout = time.Second * 2
 
@@ -22,10 +23,12 @@ func TestHttpDo(t *testing.T) {
 
 	htServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("some thing"))
 	}))
 
-	resp, err := uc.Do(context.Background(), http.MethodGet, htServer.URL, nil, nil)
+	resp, err := uc.Get(context.Background(), htServer.URL, nil)
 	assert.NotNil(t, resp)
+	t.Log(resp)
 	assert.NoError(t, err)
 }
 
