@@ -3,7 +3,6 @@ package httpclient_test
 import (
 	"context"
 	"github.com/go-chassis/foundation/httpclient"
-	_ "github.com/go-chassis/go-chassis/security/plugins/aes"
 	"github.com/stretchr/testify/assert"
 	"os"
 
@@ -68,6 +67,7 @@ func TestGetURLClient(t *testing.T) {
 	uc.SSLEnabled = true
 	uc.HandshakeTimeout = tduration
 	uc.ResponseHeaderTimeout = tduration
+	uc.RequestTimeout = tduration
 
 	c, err := httpclient.New(uc)
 	expectedc := &httpclient.Requests{
@@ -77,6 +77,7 @@ func TestGetURLClient(t *testing.T) {
 				ResponseHeaderTimeout: tduration,
 				DisableCompression:    false,
 			},
+			Timeout: tduration,
 		},
 	}
 
@@ -94,6 +95,7 @@ func TestGetURLClientURLClientOptionNil(t *testing.T) {
 				TLSHandshakeTimeout:   option.HandshakeTimeout,
 				ResponseHeaderTimeout: option.ResponseHeaderTimeout,
 				DisableCompression:    !option.Compressed,
+				MaxIdleConnsPerHost:   httpclient.DefaultOptions.ConnsPerHost,
 			},
 		},
 		TLS: option.TLSConfig,
@@ -118,6 +120,7 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 				TLSHandshakeTimeout:   tduration,
 				ResponseHeaderTimeout: tduration,
 				DisableCompression:    false,
+				MaxIdleConnsPerHost:   httpclient.DefaultOptions.ConnsPerHost,
 			},
 		},
 	}
