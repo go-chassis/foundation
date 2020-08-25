@@ -30,11 +30,13 @@ var DefaultOptions = Options{
 	ResponseHeaderTimeout: 60 * time.Second,
 	RequestTimeout:        60 * time.Second,
 	ConnsPerHost:          5,
+	TLSVersion:            tls.VersionTLS13,
 }
 
 //Options is a struct which provides options for client
 type Options struct {
 	SSLEnabled            bool
+	TLSVersion            int
 	TLSConfig             *tls.Config
 	Compressed            bool
 	HandshakeTimeout      time.Duration
