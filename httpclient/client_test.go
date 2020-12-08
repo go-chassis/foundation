@@ -2,6 +2,7 @@ package httpclient_test
 
 import (
 	"context"
+	"crypto/tls"
 	"os"
 
 	"github.com/go-chassis/foundation/httpclient"
@@ -25,11 +26,31 @@ func TestHttpDo(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("some thing"))
 	}))
-
 	resp, err := uc.Get(context.Background(), htServer.URL, nil)
-	assert.NotNil(t, resp)
 	t.Log(resp)
 	assert.NoError(t, err)
+	t.Run("https get,should be ok", func(t *testing.T) {
+		s := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("some thing"))
+		}))
+		r, err := httpclient.New(&httpclient.Options{
+			TLSConfig: &tls.Config{InsecureSkipVerify: true},
+		})
+		assert.NoError(t, err)
+		resp, err := r.Get(context.Background(), s.URL, nil)
+		t.Log(resp)
+		assert.NoError(t, err)
+	})
+	t.Run("https get,should be ok", func(t *testing.T) {
+		r, err := httpclient.New(&httpclient.Options{
+			TLSConfig: &tls.Config{InsecureSkipVerify: true},
+		})
+		assert.NoError(t, err)
+		resp, err := r.Get(context.Background(), "https://www.baidu.com", nil)
+		t.Log(resp)
+		assert.NoError(t, err)
+	})
 }
 
 func TestHttpDoHeadersNil(t *testing.T) {
@@ -65,7 +86,6 @@ func TestGetURLClient(t *testing.T) {
 
 	var uc = new(httpclient.Options)
 	uc.Compressed = true
-	uc.SSLEnabled = true
 	uc.HandshakeTimeout = tduration
 	uc.ResponseHeaderTimeout = tduration
 	uc.RequestTimeout = tduration
@@ -92,7 +112,6 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 
 	var uc2 = new(httpclient.Options)
 	uc2.Compressed = true
-	uc2.SSLEnabled = false
 	uc2.HandshakeTimeout = tduration
 	uc2.ResponseHeaderTimeout = tduration
 

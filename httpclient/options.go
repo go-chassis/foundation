@@ -35,7 +35,6 @@ var DefaultOptions = Options{
 
 //Options is a struct which provides options for client
 type Options struct {
-	SSLEnabled            bool
 	TLSVersion            int
 	TLSConfig             *tls.Config
 	Compressed            bool
