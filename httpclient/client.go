@@ -19,7 +19,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io"
@@ -57,7 +56,6 @@ func NewGZipBodyReader(body io.ReadCloser) (io.ReadCloser, error) {
 //Requests is a restful client
 type Requests struct {
 	*http.Client
-	TLS     *tls.Config
 	options Options
 }
 
@@ -76,7 +74,7 @@ func (r *Requests) Delete(ctx context.Context, url string, headers http.Header) 
 func (r *Requests) Do(ctx context.Context, method string, url string, headers http.Header, body []byte) (resp *http.Response, err error) {
 	if strings.HasPrefix(url, "https") {
 		if transport, ok := r.Client.Transport.(*http.Transport); ok {
-			transport.TLSClientConfig = r.TLS
+			transport.TLSClientConfig = r.options.TLSConfig
 		}
 	}
 	if headers == nil {
@@ -90,7 +88,7 @@ func (r *Requests) Do(ctx context.Context, method string, url string, headers ht
 	}
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("create request failed: %s", err.Error()))
+		return nil, fmt.Errorf("create request failed: %s", err.Error())
 	}
 	req = req.WithContext(ctx)
 	req.Header = headers
@@ -113,7 +111,11 @@ func (r *Requests) Do(ctx context.Context, method string, url string, headers ht
 	case "gzip":
 		reader, err := NewGZipBodyReader(resp.Body)
 		if err != nil {
-			io.Copy(ioutil.Discard, resp.Body)
+			_, err = io.Copy(ioutil.Discard, resp.Body)
+			if err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
 			resp.Body.Close()
 			return nil, err
 		}
@@ -176,34 +178,18 @@ func setOptionDefaultValue(o *Options) Options {
 //New is a function which which sets client option
 func New(o *Options) (client *Requests, err error) {
 	option := setOptionDefaultValue(o)
-	if option.TLSConfig == nil {
-		client = &Requests{
-			Client: &http.Client{
-				Transport: &http.Transport{
-					MaxIdleConnsPerHost:   option.ConnsPerHost,
-					TLSHandshakeTimeout:   option.HandshakeTimeout,
-					ResponseHeaderTimeout: option.ResponseHeaderTimeout,
-					DisableCompression:    !option.Compressed,
-				},
-				Timeout: option.RequestTimeout,
-			},
-			options: option,
-		}
-
-		return
-	}
-
 	client = &Requests{
 		Client: &http.Client{
 			Transport: &http.Transport{
+				MaxIdleConnsPerHost:   option.ConnsPerHost,
 				TLSHandshakeTimeout:   option.HandshakeTimeout,
 				ResponseHeaderTimeout: option.ResponseHeaderTimeout,
 				DisableCompression:    !option.Compressed,
 			},
 			Timeout: option.RequestTimeout,
 		},
-		TLS:     option.TLSConfig,
 		options: option,
 	}
+
 	return
 }
