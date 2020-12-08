@@ -22,12 +22,13 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/go-chassis/foundation/string"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/go-chassis/foundation/stringutil"
 )
 
 //SignRequest sign a http request so that it can talk to API server
@@ -175,7 +176,7 @@ func setOptionDefaultValue(o *Options) Options {
 //New is a function which which sets client option
 func New(o *Options) (client *Requests, err error) {
 	option := setOptionDefaultValue(o)
-	if !option.SSLEnabled {
+	if option.TLSConfig == nil {
 		client = &Requests{
 			Client: &http.Client{
 				Transport: &http.Transport{

@@ -1,10 +1,11 @@
 package tlsutil_test
 
 import (
+	"testing"
+
 	"github.com/go-chassis/foundation/security"
 	"github.com/go-chassis/foundation/tlsutil"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestLoadTLSCertificateFileNotExist(t *testing.T) {
