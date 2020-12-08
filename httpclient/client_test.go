@@ -2,9 +2,10 @@ package httpclient_test
 
 import (
 	"context"
+	"os"
+
 	"github.com/go-chassis/foundation/httpclient"
 	"github.com/stretchr/testify/assert"
-	"os"
 
 	"net/http"
 	"net/http/httptest"
@@ -69,43 +70,18 @@ func TestGetURLClient(t *testing.T) {
 	uc.ResponseHeaderTimeout = tduration
 	uc.RequestTimeout = tduration
 
-	c, err := httpclient.New(uc)
-	expectedc := &httpclient.Requests{
-		Client: &http.Client{
-			Transport: &http.Transport{
-				TLSHandshakeTimeout:   tduration,
-				ResponseHeaderTimeout: tduration,
-				DisableCompression:    false,
-			},
-			Timeout: tduration,
-		},
-	}
+	_, err := httpclient.New(uc)
 
-	assert.Equal(t, expectedc.Client, c.Client)
 	assert.NoError(t, err)
 
 }
 
 func TestGetURLClientURLClientOptionNil(t *testing.T) {
 
-	option := httpclient.DefaultOptions
-	expectedclient := &httpclient.Requests{
-		Client: &http.Client{
-			Transport: &http.Transport{
-				TLSHandshakeTimeout:   option.HandshakeTimeout,
-				ResponseHeaderTimeout: option.ResponseHeaderTimeout,
-				DisableCompression:    !option.Compressed,
-				MaxIdleConnsPerHost:   httpclient.DefaultOptions.ConnsPerHost,
-			},
-		},
-		TLS: option.TLSConfig,
-	}
-
 	var uc1 *httpclient.Options
 
-	c1, err := httpclient.New(uc1)
+	_, err := httpclient.New(uc1)
 
-	assert.Equal(t, expectedclient.Client, c1.Client)
 	assert.NoError(t, err)
 
 }
@@ -114,26 +90,14 @@ func TestGetURLClientSSLEnabledFalse(t *testing.T) {
 
 	tduration := time.Second * 2
 
-	expectedc := &httpclient.Requests{
-		Client: &http.Client{
-			Transport: &http.Transport{
-				TLSHandshakeTimeout:   tduration,
-				ResponseHeaderTimeout: tduration,
-				DisableCompression:    false,
-				MaxIdleConnsPerHost:   httpclient.DefaultOptions.ConnsPerHost,
-			},
-		},
-	}
-
 	var uc2 = new(httpclient.Options)
 	uc2.Compressed = true
 	uc2.SSLEnabled = false
 	uc2.HandshakeTimeout = tduration
 	uc2.ResponseHeaderTimeout = tduration
 
-	c2, err := httpclient.New(uc2)
+	_, err := httpclient.New(uc2)
 
-	assert.Equal(t, expectedc.Client, c2.Client)
 	assert.NoError(t, err)
 
 }

@@ -7,7 +7,6 @@ httpclient is a production ready client.
 
 ```go
 	options := &httpclient.URLClientOption{
-		SSLEnabled: opt.EnableSSL,
 		TLSConfig:  opt.TLSConfig,
 		Compressed: opt.Compressed,
 	}
@@ -19,4 +18,6 @@ httpclient is a production ready client.
 ```
 
 Debug Mode
+```shell script
 export HTTP_DEBUG=1
+```

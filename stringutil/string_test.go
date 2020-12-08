@@ -2,10 +2,11 @@ package stringutil_test
 
 import (
 	"container/list"
-	stringutil "github.com/go-chassis/foundation/string"
-	"github.com/stretchr/testify/assert"
 	"strings"
 	"testing"
+
+	"github.com/go-chassis/foundation/stringutil"
+	"github.com/stretchr/testify/assert"
 )
 
 var s = strings.Repeat("a", 1024)
