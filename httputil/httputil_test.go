@@ -2,50 +2,15 @@ package httputil_test
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
+	"github.com/go-chassis/foundation/httputil"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"testing"
 
-	"github.com/go-chassis/go-chassis/v2/client/rest"
-	"github.com/go-chassis/go-chassis/v2/core/common"
-	"github.com/go-chassis/go-chassis/v2/core/invocation"
-	"github.com/go-chassis/go-chassis/v2/pkg/util/httputil"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestHttpRequest(t *testing.T) {
-
-	t.Run("convert invocation with ctx to http request,should success",
-		func(t *testing.T) {
-			r, err := rest.NewRequest("GET", "http://hello", nil)
-			assert.NoError(t, err)
-			inv := &invocation.Invocation{
-				Args: r,
-				Ctx: common.NewContext(map[string]string{
-					"os":   "mac",
-					"user": "peter",
-				})}
-			r2, err := httputil.HTTPRequest(inv)
-			assert.NoError(t, err)
-			assert.Equal(t, "mac", r2.Header.Get("os"))
-			httputil.SetURI(r, "http://example.com")
-			assert.Equal(t, "http://example.com", r.URL.String())
-
-		})
-	t.Run("set wrong type to invocation,should fail",
-		func(t *testing.T) {
-			inv := &invocation.Invocation{
-				Ctx: common.NewContext(map[string]string{
-					"os":   "mac",
-					"user": "peter",
-				})}
-			_, err := httputil.HTTPRequest(inv)
-			assert.Error(t, err)
-		})
-}
 
 func TestSetURI(t *testing.T) {
 	req := &http.Request{}
@@ -114,34 +79,6 @@ func TestSetContentType(t *testing.T) {
 		httputil.SetContentType(req, ct)
 		cv := httputil.GetContentType(req)
 		assert.Equal(t, cv, ct)
-	})
-}
-func TestHTTPRequest(t *testing.T) {
-
-	t.Run("get request for inv args nil will reply error , not nil reply request", func(t *testing.T) {
-		ctx := context.WithValue(context.TODO(), common.ContextHeaderKey{}, map[string]string{
-			"user":    "peter",
-			"address": "beijing",
-		})
-		inv := &invocation.Invocation{
-			Args: nil,
-			Ctx:  ctx,
-		}
-		req, err := httputil.HTTPRequest(inv)
-		assert.NotNil(t, err)
-		assert.Equal(t, err, httputil.ErrInvalidReq)
-		assert.Nil(t, req)
-
-		inv.Args = &http.Request{
-			Header: make(map[string][]string),
-		}
-		req, err = httputil.HTTPRequest(inv)
-		assert.Nil(t, err)
-		assert.NotNil(t, req)
-		rv := req.Header.Get("user")
-		assert.Equal(t, rv, "peter")
-		rv = req.Header.Get("address")
-		assert.Equal(t, rv, "beijing")
 	})
 }
 
