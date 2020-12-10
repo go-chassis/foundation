@@ -7,9 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-
-	"github.com/go-chassis/foundation/security"
 )
+
+type Decrypt func(src string) (string, error)
 
 //GetX509CACertPool is a function used to get certificate
 func GetX509CACertPool(caCertFile string) (*x509.CertPool, error) {
@@ -24,7 +24,7 @@ func GetX509CACertPool(caCertFile string) (*x509.CertPool, error) {
 }
 
 //LoadTLSCertificate is a function used to load a certificate
-func LoadTLSCertificate(certFile, keyFile, passphase string, cipher security.Cipher) ([]tls.Certificate, error) {
+func LoadTLSCertificate(certFile, keyFile, passphase string, decrypt Decrypt) ([]tls.Certificate, error) {
 	certContent, err := ioutil.ReadFile(certFile)
 	if err != nil {
 		errorMsg := "read cert file" + certFile + "failed."
@@ -43,7 +43,7 @@ func LoadTLSCertificate(certFile, keyFile, passphase string, cipher security.Cip
 		return nil, errors.New(errorMsg)
 	}
 
-	plainpass, err := cipher.Decrypt(passphase)
+	plainpass, err := decrypt(passphase)
 	if err != nil {
 		return nil, err
 	}
