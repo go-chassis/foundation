@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 
-// Package security is deprecated plz use github.com/go-chassis/cari/security
+// Package security is deprecated
+// Deprecated: use github.com/go-chassis/cari/security
 package security
 
 //Cipher interface declares two function for encryption and decryption
+//
+// Deprecated: use github.com/go-chassis/cari/security
 type Cipher interface {
 	Encrypt(src string) (string, error)
 
