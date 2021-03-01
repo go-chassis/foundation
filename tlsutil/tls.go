@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 )
@@ -24,50 +23,48 @@ func GetX509CACertPool(caCertFile string) (*x509.CertPool, error) {
 }
 
 //LoadTLSCertificate is a function used to load a certificate
-func LoadTLSCertificate(certFile, keyFile, passphase string, decrypt Decrypt) ([]tls.Certificate, error) {
+// RFC 1423 is insecure, password and decrypt is not required
+func LoadTLSCertificate(certFile, keyFile, password string, decrypt Decrypt) ([]tls.Certificate, error) {
 	certContent, err := ioutil.ReadFile(certFile)
-	if err != nil {
-		errorMsg := "read cert file" + certFile + "failed."
-		return nil, errors.New(errorMsg)
-	}
-
-	keyContent, err := ioutil.ReadFile(keyFile)
-	if err != nil {
-		errorMsg := "read key file" + keyFile + "failed."
-		return nil, errors.New(errorMsg)
-	}
-
-	keyBlock, _ := pem.Decode(keyContent)
-	if keyBlock == nil {
-		errorMsg := "decode key file " + keyFile + " failed"
-		return nil, errors.New(errorMsg)
-	}
-
-	plainpass, err := decrypt(passphase)
 	if err != nil {
 		return nil, err
 	}
 
-	if x509.IsEncryptedPEMBlock(keyBlock) {
-		keyData, err := x509.DecryptPEMBlock(keyBlock, []byte(plainpass))
-		if err != nil {
-			errorMsg := "decrypt key file " + keyFile + " failed."
-			return nil, errors.New(errorMsg)
-		}
-
-		// 解密成功，重新编码为无加密的PEM格式文件
-		plainKeyBlock := &pem.Block{
-			Type:  "RSA PRIVATE KEY",
-			Bytes: keyData,
-		}
-
-		keyContent = pem.EncodeToMemory(plainKeyBlock)
+	keyContent, err := ioutil.ReadFile(keyFile)
+	if err != nil {
+		return nil, err
 	}
 
+	keyBlock, _ := pem.Decode(keyContent)
+	if keyBlock == nil {
+		return nil, fmt.Errorf("decrypt key file "+keyFile+" failed: %w", err)
+	}
+	if password != "" {
+		var plainpass string
+		if decrypt != nil {
+			plainpass, err = decrypt(password)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if x509.IsEncryptedPEMBlock(keyBlock) {
+			keyData, err := x509.DecryptPEMBlock(keyBlock, []byte(plainpass))
+			if err != nil {
+				return nil, fmt.Errorf("decrypt key file "+keyFile+" failed. err: %w", err)
+			}
+
+			// 解密成功，重新编码为无加密的PEM格式文件
+			keyBlock = &pem.Block{
+				Type:  "RSA PRIVATE KEY",
+				Bytes: keyData,
+			}
+
+		}
+	}
+	keyContent = pem.EncodeToMemory(keyBlock)
 	cert, err := tls.X509KeyPair(certContent, keyContent)
 	if err != nil {
-		errorMsg := "load X509 key pair from cert file " + certFile + " with key file " + keyFile + " failed."
-		return nil, errors.New(errorMsg)
+		return nil, fmt.Errorf("load cert failed:%w", err)
 	}
 
 	var certs []tls.Certificate
