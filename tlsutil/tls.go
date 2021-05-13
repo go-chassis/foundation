@@ -46,6 +46,8 @@ func LoadTLSCertificate(certFile, keyFile, password string, decrypt Decrypt) ([]
 			if err != nil {
 				return nil, err
 			}
+		} else {
+			plainpass = password
 		}
 		if x509.IsEncryptedPEMBlock(keyBlock) {
 			keyData, err := x509.DecryptPEMBlock(keyBlock, []byte(plainpass))
