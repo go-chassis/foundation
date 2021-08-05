@@ -63,7 +63,7 @@ FF2uvhCC6xWFT/PzYycBYMzq6gUus3aJQ+wjFnEflZYj7wGzf4tGzA5I
 `)
 
 func TestLoadTLSCertificate(t *testing.T) {
-	td := t.TempDir()
+	td := os.TempDir()
 	f1, err := os.Create(filepath.Join(td, "key.pem"))
 	assert.NoError(t, err)
 	defer f1.Close()

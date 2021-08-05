@@ -1,8 +1,9 @@
 package validator
 
 import (
-	"github.com/go-playground/validator"
 	"regexp"
+
+	"github.com/go-playground/validator"
 )
 
 // RegexValidateRule contains an validate tag's info
