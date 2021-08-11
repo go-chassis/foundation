@@ -29,7 +29,6 @@ type TLSOptions struct {
 	CertFile       string
 	KeyFile        string
 	KeyPassphase   string
-	Decrypt        Decrypt
 }
 
 type TLSOption func(*TLSOptions)
@@ -40,11 +39,10 @@ func WithCipherSuits(s []uint16) TLSOption { return func(c *TLSOptions) { c.Ciph
 func WithVersion(min, max uint16) TLSOption {
 	return func(c *TLSOptions) { c.MinVersion, c.MaxVersion = min, max }
 }
-func WithCert(f string) TLSOption     { return func(c *TLSOptions) { c.CertFile = f } }
-func WithKey(k string) TLSOption      { return func(c *TLSOptions) { c.KeyFile = k } }
-func WithKeyPass(p string) TLSOption  { return func(c *TLSOptions) { c.KeyPassphase = p } }
-func WithCA(f string) TLSOption       { return func(c *TLSOptions) { c.CACertFile = f } }
-func WithDecrypt(f Decrypt) TLSOption { return func(c *TLSOptions) { c.Decrypt = f } }
+func WithCert(f string) TLSOption    { return func(c *TLSOptions) { c.CertFile = f } }
+func WithKey(k string) TLSOption     { return func(c *TLSOptions) { c.KeyFile = k } }
+func WithKeyPass(p string) TLSOption { return func(c *TLSOptions) { c.KeyPassphase = p } }
+func WithCA(f string) TLSOption      { return func(c *TLSOptions) { c.CACertFile = f } }
 
 func toTLSOptions(opts ...TLSOption) (op TLSOptions) {
 	for _, opt := range opts {
@@ -58,6 +56,7 @@ func DefaultClientTLSOptions() []TLSOption {
 		WithVerifyPeer(true),
 		WithVerifyHostName(true),
 		WithVersion(tls.VersionTLS12, MaxSupportedTLSVersion),
+		WithCipherSuits(TLSCipherSuits()),
 	}
 }
 
