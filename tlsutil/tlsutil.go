@@ -128,7 +128,7 @@ func GetClientTLSConfig(ops ...TLSOption) (tlsConfig *tls.Config, err error) {
 	}
 
 	if len(opts.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(opts.CertFile, opts.KeyFile, opts.KeyPassphase, opts.Decrypt)
+		certs, err = LoadTLSCertificate(opts.CertFile, opts.KeyFile, opts.KeyPassphase, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +161,7 @@ func GetServerTLSConfig(ops ...TLSOption) (tlsConfig *tls.Config, err error) {
 
 	var certs []tls.Certificate
 	if len(opts.CertFile) > 0 {
-		certs, err = LoadTLSCertificate(opts.CertFile, opts.KeyFile, opts.KeyPassphase, opts.Decrypt)
+		certs, err = LoadTLSCertificate(opts.CertFile, opts.KeyFile, opts.KeyPassphase, nil)
 		if err != nil {
 			return nil, err
 		}
