@@ -37,7 +37,7 @@ const (
 type workerPool struct {
 	name                string        // 工作协程池名称
 	maxWorkers          int           // 最大工程协程池数据
-	tasks               chan Task     // Task channel
+	tasks               chan *Task    // Task channel
 	readyWorkers        chan *worker  // 当前活跃工作协程
 	idleTimeout         time.Duration // 空闲goroutine回收时间
 	onDispatcherStopped chan struct{} // stop信号
@@ -58,7 +58,7 @@ func NewWorkerPool(name string, maxWorkers int, idleTimeout time.Duration) Pool 
 	pool := &workerPool{
 		name:                name,
 		maxWorkers:          maxWorkers,
-		tasks:               make(chan Task, tasksCapacity),
+		tasks:               make(chan *Task, tasksCapacity),
 		readyWorkers:        make(chan *worker, readyWorkerQueueSize),
 		idleTimeout:         idleTimeout,
 		onDispatcherStopped: make(chan struct{}),
@@ -74,22 +74,25 @@ func NewWorkerPool(name string, maxWorkers int, idleTimeout time.Duration) Pool 
 	return pool
 }
 
-func (p *workerPool) Submit(task Task) {
+func (p *workerPool) Submit(task *Task) {
 	if task == nil || p.Stopped() {
 		return
 	}
 	p.tasks <- task
 }
 
-func (p *workerPool) SubmitAndWait(task Task) {
+func (p *workerPool) SubmitAndWait(task *Task) {
 	if task == nil || p.Stopped() {
 		return
 	}
 	worker := p.mustGetWorker()
 	doneChan := make(chan struct{})
-	worker.execute(func() {
-		task()
-		close(doneChan)
+	worker.execute(&Task{
+		ID: task.ID,
+		F: func() {
+			task.F()
+			close(doneChan)
+		},
 	})
 	<-doneChan
 }
@@ -123,7 +126,7 @@ func (p *workerPool) dispatch() {
 	defer idleTimeoutTimer.Stop()
 	var (
 		worker *worker
-		task   Task
+		task   *Task
 	)
 
 	for {
@@ -139,7 +142,7 @@ func (p *workerPool) dispatch() {
 			if p.workersAlive.Load() > 0 {
 				select {
 				case worker = <-p.readyWorkers:
-					worker.stop(func() {})
+					worker.stop(func(chan *Task) {})
 				default:
 					// 所有worker都忙, continue
 				}
@@ -158,7 +161,7 @@ func (p *workerPool) stopWorkers() {
 	for p.workersAlive.Load() > 0 {
 		wg.Add(1)
 		worker := <-p.readyWorkers
-		worker.stop(func() {
+		worker.stop(func(chan *Task) {
 			wg.Done()
 		})
 	}
@@ -170,7 +173,7 @@ func (p *workerPool) consumedRemainingTasks() {
 	for {
 		select {
 		case task := <-p.tasks:
-			task()
+			task.F()
 			p.tasksConsumed.Inc()
 		default:
 			return

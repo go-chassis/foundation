@@ -19,6 +19,7 @@ package workpool
 
 import (
 	"runtime"
+	"strconv"
 	"testing"
 	"time"
 
@@ -34,71 +35,110 @@ func Test_PoolSubmit(t *testing.T) {
 	assert.Equal(grNum+1, runtime.NumGoroutine())
 
 	var c atomic.Int32
-
 	finished := make(chan struct{})
 	do := func(iterations int) {
 		for i := 0; i < iterations; i++ {
-			pool.Submit(func() {
-				c.Inc()
-			})
+			pool.Submit(
+				&Task{
+					ID: "inc" + strconv.Itoa(i),
+					F: func() {
+						c.Inc()
+					},
+				})
 		}
 		finished <- struct{}{}
 	}
-	go do(100)
-	<-finished
-	assert.True(grNum+2+1 <= runtime.NumGoroutine())
-	pool.Stop()
-	pool.Stop()
-	// reject all task
-	go do(100)
-	<-finished
-	assert.Equal(int32(100), c.Load())
+
+	t.Run("Pool Setting , Submit 100", func(t *testing.T) {
+		go do(100)
+		<-finished
+		assert.True(grNum+2+1 <= runtime.NumGoroutine())
+		pool.Stop()
+	})
+
+	t.Run("Pool Setting, Submit Stop, task all finished", func(t *testing.T) {
+		pool.Stop()
+		// reject all task
+		go do(100)
+		<-finished
+		assert.Equal(int32(100), c.Load())
+	})
+
 }
 
 func Test_PoolSubmitAndWait(t *testing.T) {
 	assert := assert.New(t)
-	pool := NewDefaultPool("test", 2, time.Second*5)
+	pool := NewDefaultPool("test", 20, time.Second*5)
 	var c atomic.Int32
 
 	finished := make(chan struct{})
 	do := func(iterations int) {
 		for i := 0; i < iterations; i++ {
-			pool.SubmitAndWait(func() {
-				c.Inc()
-			})
+			pool.Submit(
+				&Task{
+					ID: "inc" + strconv.Itoa(i),
+					F: func() {
+						c.Inc()
+					},
+				})
 		}
 		finished <- struct{}{}
 	}
-	go do(1000)
-	<-finished
-	assert.Equal(int32(1000), c.Load())
-	pool.Stop()
+
+	t.Run("Pool Setting , SubmitAndWait 1000", func(t *testing.T) {
+		go do(1000)
+		<-finished
+		time.Sleep(1 * time.Second)
+		assert.Equal(int32(1000), c.Load())
+		pool.Stop()
+	})
+
+	t.Run("Pool Setting, SubmitAndWait Stop, task all finished", func(t *testing.T) {
+		pool.Stop()
+		// reject all task
+		go do(1000)
+		<-finished
+		assert.Equal(int32(1000), c.Load())
+	})
 }
 
 func Test_PoolStoped(t *testing.T) {
 	assert := assert.New(t)
-	pool := NewDefaultPool("test", 2, time.Second*5)
+	pool := NewDefaultPool("test", 100, time.Second*5)
 	var c atomic.Int32
 
 	finished := make(chan struct{})
 	do := func(iterations int) {
 		for i := 0; i < iterations; i++ {
-			pool.SubmitAndWait(func() {
-				c.Inc()
-			})
+			pool.Submit(
+				&Task{
+					ID: "inc" + strconv.Itoa(i),
+					F: func() {
+						c.Inc()
+					},
+				})
 		}
 		finished <- struct{}{}
 	}
-	go do(1000)
-	<-finished
-	assert.Equal(int32(1000), c.Load())
 
-	ret := pool.Stopped()
-	assert.False(ret)
-	time.Sleep(time.Second * 1)
-	ret = pool.Stopped()
-	assert.False(ret)
-	pool.Stop()
-	ret = pool.Stopped()
-	assert.True(ret)
+	t.Run("Pool Setting Submit 5000", func(t *testing.T) {
+		go do(5000)
+		<-finished
+		time.Sleep(1 * time.Second)
+		assert.Equal(int32(5000), c.Load())
+	})
+
+	t.Run("Pool Setting Submit seting Stoped,task isnot finished", func(t *testing.T) {
+		ret := pool.Stopped()
+		assert.False(ret)
+		time.Sleep(time.Second * 1)
+		ret = pool.Stopped()
+		assert.False(ret)
+	})
+
+	t.Run("Pool Setting, Submit seting Stop, task is finished", func(t *testing.T) {
+		pool.Stop()
+		ret := pool.Stopped()
+		assert.True(ret)
+	})
 }

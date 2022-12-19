@@ -34,7 +34,7 @@ func Test_NewWorker(t *testing.T) {
 		&workerPool{
 			name:                "test",
 			maxWorkers:          2,
-			tasks:               make(chan Task, tasksCapacity),
+			tasks:               make(chan *Task, tasksCapacity),
 			readyWorkers:        make(chan *worker, readyWorkerQueueSize),
 			idleTimeout:         time.Second * 5,
 			onDispatcherStopped: make(chan struct{}),
@@ -47,10 +47,40 @@ func Test_NewWorker(t *testing.T) {
 			cancel:              cancel,
 		},
 	)
+	t.Run("Task Set, Setting task", func(t *testing.T) {
+		w.execute(&Task{
+			ID: "taskid1",
+			F: func() {
+				fmt.Println("dongjiang1")
+			},
+		})
+	})
+	t.Run("Task Set, Setting task2", func(t *testing.T) {
+		w.execute(&Task{
+			ID: "taskid2",
+			F: func() {
+				fmt.Println("dongjiang2")
+			},
+		})
+		assert.True(true)
+	})
 
-	w.execute(func() { fmt.Println("dongjiang1") })
-	w.execute(func() { fmt.Println("dongjiang2") })
+	t.Run("Task Set, Setting task3", func(t *testing.T) {
+		w.execute(&Task{
+			ID: "taskid3",
+			F: func() {
+				fmt.Println("dongjiang3")
+			},
+		})
+		assert.True(true)
+	})
 
-	w.stop(func() { fmt.Println("finished") })
+	t.Run("Task Set Stop", func(t *testing.T) {
+		w.stop(func(chan *Task) {
+			fmt.Println("finished")
+		})
+		assert.True(true)
+	})
+
 	assert.True(true)
 }
