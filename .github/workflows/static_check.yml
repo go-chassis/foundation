@@ -1,0 +1,16 @@
+name: Merge check
+on: [push, pull_request]
+jobs:
+  build:
+    name: Merge check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.16
+      id: go
+    - name: UT
+      uses: actions/checkout@v1
+    - name: Build
+      run: go test -v ./...
