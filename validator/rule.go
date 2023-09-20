@@ -8,8 +8,9 @@ import (
 
 // RegexValidateRule contains an validate tag's info
 type RegexValidateRule struct {
-	tag   string
-	regex *regexp.Regexp
+	tag     string
+	regex   *regexp.Regexp
+	explain string
 }
 
 // Validate validates string
@@ -28,8 +29,10 @@ func (r *RegexValidateRule) Tag() string {
 
 // Explain explains the rule
 func (r *RegexValidateRule) Explain() string {
-	explain := r.regex.String()
-	return explain
+	if r.explain != "" {
+		return r.explain
+	}
+	return r.regex.String()
 }
 
 // NewRegexRule news a rule
@@ -38,4 +41,10 @@ func NewRegexRule(tag, regexStr string) *RegexValidateRule {
 		tag:   tag,
 		regex: regexp.MustCompile(regexStr),
 	}
+}
+
+// WithExplain customize the explanation
+func (r *RegexValidateRule) WithExplain(explain string) *RegexValidateRule {
+	r.explain = explain
+	return r
 }
